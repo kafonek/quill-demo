@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "python-frontend"
+version = "0.1.0"
+description = ""
+authors = ["Kafonek <matt.kafonek@noteable.io>"]
+
+[tool.poetry.dependencies]
+python = "3.10.2" # match pyodide 0.21.3, as seen in static/worker.js
+fastapi = "^0.88.0"
+uvicorn = "^0.20.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^5.2"
+# The below are all dev dependencies solely to help with type hinting in IDE when
+# editing static/worker.py. y-py and ypy-websocket will be installed in worker.js
+# before pulling in worker.py and installing it locally within the pyodide webworker
+y-py = "^0.5.5"
+pyodide-py = "^0.22.0-alpha.1"
+ypy-websocket = "^0.8.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

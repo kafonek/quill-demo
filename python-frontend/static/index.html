@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Live Collaboration via y-py and y-crdt</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+</head>
+
+<body>
+    <!-- Create the editor container -->
+    <div id="editor"></div>
+
+    <script>
+        const worker = new Worker('./worker.js')
+
+        var quill = new Quill('#editor', {
+            theme: 'snow',
+            placeholder: 'Loading Pyodide...',
+            readOnly: true
+        });
+        window.quill = quill
+
+        // Send deltas to webworker
+        function report_deltas(eventType, delta, state, origin) {
+            console.log("Reporting change", eventType, delta, origin)
+            if (delta && delta.ops && origin == 'user') {
+                worker.postMessage({
+                    type: 'delta',
+                    ops: delta.ops
+                })
+            }
+        }
+
+        quill.on('editor-change', report_deltas)
+
+        // Handle messages coming back from webworker
+        worker.onmessage = function (e) {
+            var data = e.data
+            console.log("in onmessage")
+            console.log(data)
+            window.data = data
+            if (data.type === "status") {
+                if (data.data === "ready") {
+                    console.log("Enabling editor")
+                    quill.enable()
+                    quill.root.dataset.placeholder = "Start collaborating..."
+                }
+            }
+            else if (data.type === "delta") {
+                quill.updateContents(data.data)
+            }
+        }
+
+
+    </script>
+</body>
+
+</html>
