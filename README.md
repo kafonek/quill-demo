@@ -22,6 +22,23 @@ If you need to switch ports around because you have other things running on your
 
 Unfortunately, PyPI does not host wasm wheels. See y-py PR's [91](https://github.com/y-crdt/ypy/pull/91), [99](https://github.com/y-crdt/ypy/pull/99), and [103](https://github.com/y-crdt/ypy/pull/103) for ongoing attempts to build a wasm wheel as part of a y-py release and attach the binary as an asset in github. For the sake of this demo, a copy of the wheel is just included in the repo and served out as a static file. See `python-frontend/static/worker.js` for implementation of writing and installing the wheel from emscripten disk (`emfs:<path>`).
 
+## Webworker flow
+
+When you're reading the `python-frontend` code, it might help to think about the workflow as follows:
+
+ 1. Browser asks for `index.html`, `python-frontend` FastAPI server hands over that static file
+ 2. `index.html` spawns a webworker, and the script to execute in that thread is the static file `worker.js`
+ 3. `worker.js` pulls in `pyodide` and then runs Python code (in webassembly) to:
+  - Load `micropip`
+  - Download `y-py` wasm wheel static file, write it to emscripten file system, and pip install from disk
+  - Install `ypy-websocket` from pypi.org
+  - Download `worker.py` static file, write it to emscripten file system
+  - `import worker`
+ 4. On import, `worker.py`:
+  - Instantiates `QuillBinding`, which will send a message over webworker for `index.html` to enable quill canvas
+  - Instantiate `WebsocketProvider`, which establishes the websocket connection and begins sync steps
+  - Set an `onmessage` handler for messages coming from main js thread to the webworker thread that `worker.py` is in
+
 # Issues
 
  - Obviously missing plenty of features in this demo, such as awareness protocol and websocket disconnect/reconnect in `python-frontend`
